@@ -37,6 +37,7 @@ async function run() {
     await client.connect();
 
     const locationCollection = client.db('locationDB').collection('location')
+    // const countriesCollection = client.db('countries').collection('country')
 
     app.get('/location',async(req,res)=>{
         const cursor = locationCollection.find();

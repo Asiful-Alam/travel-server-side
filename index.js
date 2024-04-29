@@ -85,6 +85,32 @@ app.get("/location/:email", async (req, res) => {
       res.send(result);
     });
 
+    // get same country 
+
+    app.get("/bd/:country_name", async (req, res) => {
+      const countryName = req.params.country_name;
+      try {
+        const countryDetails = await bdCollection.findOne({ country_name: countryName });
+        if (!countryDetails) {
+          return res.status(404).json({ error: "Country not found" });
+        }
+        res.json(countryDetails);
+      } catch (error) {
+        console.error("Error fetching country details:", error);
+        res.status(500).json({ error: "Internal server error" });
+      }
+    });
+    
+    
+    // Start the server
+    app.listen(PORT, () => {
+      console.log(`Server is running on http://localhost:${PORT}`);
+    });
+    
+
+
+    // get same country end
+
     app.post("/location", async (req, res) => {
       const AddformData = req.body;
       console.log(AddformData);
@@ -92,33 +118,33 @@ app.get("/location/:email", async (req, res) => {
       res.send(result);
     });
 
-    app.put("/location/:email/:id", async (req, res) => {
-      const id = req.params.id;
-      const email = req.params.email;
-      const filter = { id: new ObjectId(id), email: email };
-      const options = { upsert: true };
-      const updatedLocation = req.body;
-      const craft = {
-        $set: {
-          name: updatedLocation.image,
-          email: updatedLocation.email,
-          tourist_spot_name: updatedLocation.tourist_spot_name,
-          Country_name: updatedLocation.Country_name,
-          price: updatedLocation.price,
-          rating: updatedLocation.rating,
-        },
-      };
-      try {
-        const result = await locationCollection.updateOne(
-          filter,
-          craft,
-          options
-        );
-        res.json(result);
-      } catch (error) {
-        res.status(500).json({ error: error.message });
-      }
-    });
+    // app.put("/location/:email/:id", async (req, res) => {
+    //   const id = req.params.id;
+    //   const email = req.params.email;
+    //   const filter = { id: new ObjectId(id), email: email };
+    //   const options = { upsert: true };
+    //   const updatedLocation = req.body;
+    //   const craft = {
+    //     $set: {
+    //       name: updatedLocation.image,
+    //       email: updatedLocation.email,
+    //       tourist_spot_name: updatedLocation.tourist_spot_name,
+    //       Country_name: updatedLocation.Country_name,
+    //       price: updatedLocation.price,
+    //       rating: updatedLocation.rating,
+    //     },
+    //   };
+    //   try {
+    //     const result = await locationCollection.updateOne(
+    //       filter,
+    //       craft,
+    //       options
+    //     );
+    //     res.json(result);
+    //   } catch (error) {
+    //     res.status(500).json({ error: error.message });
+    //   }
+    // });
 
     app.delete("/location/:id", async (req, res) => {
       const id = req.params.id;

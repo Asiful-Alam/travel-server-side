@@ -1,11 +1,10 @@
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
+const express = require("express");
+const cors = require("cors");
+require("dotenv").config();
 
-
-const {MongoClient , ServerApiVersion, ObjectId} = require('mongodb');
-const app =express();
-const port =process.env.PORT || 5000;
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const app = express();
+const port = process.env.PORT || 5000;
 
 // middleware
 // username:   asif
@@ -25,109 +24,177 @@ const client = new MongoClient(uri, {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  }
+  },
 });
 
 async function run() {
   try {
-   
     await client.connect();
 
-    const locationCollection = client.db('locationDB').collection('location')
+    const locationCollection = client.db("locationDB").collection("location");
 
-    const countriesCollection = client.db('countryDB').collection('countries')
+    const countriesCollection = client.db("countryDB").collection("countries");
 
-    const bdCollection = client.db('bdDB').collection('bd')
+    const bdCollection = client.db("bdDB").collection("bd");
 
-    
-
-    app.get('/location',async(req,res)=>{
-        const cursor = locationCollection.find();
-        const result = await cursor.toArray();
-        res.send(result);
-    })
-    app.get('/location/:email', async (req, res) => {
-      const userEmail = req.params.email;
-      const cursor = locationCollection.find({ creator_email: userEmail });
+    app.get("/location", async (req, res) => {
+      const cursor = locationCollection.find();
       const result = await cursor.toArray();
       res.send(result);
     });
-    
-    app.get('/countries',async(req,res)=>{
-        const cursor = countriesCollection.find();
-        const result = await cursor.toArray();
-        res.send(result);
-    })
-    app.get('/bd',async(req,res)=>{
-        const cursor = bdCollection.find();
-        const result = await cursor.toArray();
-        res.send(result);
-    })
 
+    // Assuming you have already initialized Express and connected to MongoDB
+
+const { ObjectId } = require('mongodb');
+
+// Assume locationCollection is your MongoDB collection
+
+app.get("/location/:email", async (req, res) => {
+  try {
+    const email = req.params.email;
+    console.log("Fetching locations for email:", email);
+    const locations = await locationCollection.find({ email }).toArray();
+    console.log("Fetched locations:", locations);
+    res.json(locations);
+  } catch (error) {
+    console.error("Error fetching locations:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
+
+
+    app.get("/countries", async (req, res) => {
+      const cursor = countriesCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+    app.get("/bd", async (req, res) => {
+      const cursor = bdCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
 
     app.get("/details/:_id", async (req, res) => {
       console.log(req.params._id);
-      const result = await locationCollection.findOne({ _id: new ObjectId(req.params._id) });
+      const result = await locationCollection.findOne({
+        _id: new ObjectId(req.params._id),
+      });
       console.log(result);
       res.send(result);
     });
-    
 
-
-
-    app.post('/location',async(req,res)=>{
-        const AddformData =req.body;
-        console.log(AddformData);
-        const result=await locationCollection.insertOne(AddformData);
-        res.send(result);
-    })    
-
-
-    app.put('/location/:email/:id', async (req, res) => {
-      const id = req.params.id;
-      const email = req.params.email;
-      const filter = { _id: new ObjectId(id), email: email };
-      const options = { upsert: true };
-      const updatedLocation = req.body;
-      const craft = {
-          $set: {
-              name: updatedLocation.image,
-              email: updatedLocation.email,
-              tourist_spot_name: updatedLocation.tourist_spot_name,
-              Country_name: updatedLocation.Country_name,
-              price: updatedLocation.price,
-              rating: updatedLocation.rating,
-          }
-      }
-      try {
-          const result = await locationCollection.updateOne(filter, craft, options);
-          res.json(result);
-      } catch (error) {
-          res.status(500).json({ error: error.message });
-      }
-  });
-  
-
-
-    app.delete('/location/:id', async (req, res) => {
-      const id=req.params.id;
-      const query ={_id:new ObjectId(id)}
-      const result=await locationCollection.deleteOne(query);
+    app.post("/location", async (req, res) => {
+      const AddformData = req.body;
+      console.log(AddformData);
+      const result = await locationCollection.insertOne(AddformData);
       res.send(result);
     });
 
+    app.put("/location/:email/:id", async (req, res) => {
+      const id = req.params.id;
+      const email = req.params.email;
+      const filter = { id: new ObjectId(id), email: email };
+      const options = { upsert: true };
+      const updatedLocation = req.body;
+      const craft = {
+        $set: {
+          name: updatedLocation.image,
+          email: updatedLocation.email,
+          tourist_spot_name: updatedLocation.tourist_spot_name,
+          Country_name: updatedLocation.Country_name,
+          price: updatedLocation.price,
+          rating: updatedLocation.rating,
+        },
+      };
+      try {
+        const result = await locationCollection.updateOne(
+          filter,
+          craft,
+          options
+        );
+        res.json(result);
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    app.delete("/location/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await locationCollection.deleteOne(query);
+      res.send(result);
+    });
+
+// for mylist dlt
+app.delete("/location/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const result = await locationCollection.deleteOne({ _id: ObjectId(id) });
+    if (result.deletedCount === 1) {
+      res.status(200).json({ message: "Location deleted successfully" });
+    } else {
+      res.status(404).json({ error: "Location not found" });
+    }
+  } catch (error) {
+    console.error("Error deleting location:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+// mylist updt
+
+
+
+
+app.get("/location/:email", async (req, res) => {
+  const email=req.params.email;
+  const result =await locationCollection.findOne({email:email}).toArray();
+  res.send(result);
+});
+
+app.get("/location/:email/id:", async (req, res) => {
+  const id=req.params.id;
+  const result =await locationCollection.findOne({_id: new ObjectId(id)});
+  res.send(result);
+});
+
+
+
+
+app.put("/location/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const updatedLocation = req.body;
+    const result = await locationCollection.updateOne(
+      { _id: ObjectId(id) },
+      { $set: updatedLocation }
+    );
+    if (result.modifiedCount === 1) {
+      res.status(200).json({ message: "Location updated successfully" });
+    } else {
+      res.status(404).json({ error: "Location not found" });
+    }
+  } catch (error) {
+    console.error("Error updating location:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
 
     await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
   } finally {
-  
     // await client.close();
   }
 }
 run().catch(console.dir);
-app.get('/', (req, res) => {
-    res.send("my server is runningg vai eta server side!");
-})
-app.listen (port,()=>{
-    console.log(`travel server is running on port :${port}`)
-})
+app.get("/", (req, res) => {
+  res.send("my server is runningg vai eta server side!");
+});
+app.listen(port, () => {
+  console.log(`travel server is running on port :${port}`);
+});

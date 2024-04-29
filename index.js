@@ -39,12 +39,14 @@ async function run() {
 
     const bdCollection = client.db('bdDB').collection('bd')
 
+    
 
     app.get('/location',async(req,res)=>{
         const cursor = locationCollection.find();
         const result = await cursor.toArray();
         res.send(result);
     })
+
     
     app.get('/countries',async(req,res)=>{
         const cursor = countriesCollection.find();
@@ -56,7 +58,13 @@ async function run() {
         const result = await cursor.toArray();
         res.send(result);
     })
+app.get('/location/:id',async(req,res)=>{
 
+  const id=req.params.id;
+  const query={_id:new ObjectId(id)};
+  const result = await locationCollection.findOne(query);
+  res.send(result);
+})
 
 
     app.get("/details/:_id", async (req, res) => {

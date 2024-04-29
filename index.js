@@ -46,7 +46,12 @@ async function run() {
         const result = await cursor.toArray();
         res.send(result);
     })
-
+    app.get('/location/:email', async (req, res) => {
+      const userEmail = req.params.email;
+      const cursor = locationCollection.find({ creator_email: userEmail });
+      const result = await cursor.toArray();
+      res.send(result);
+    });
     
     app.get('/countries',async(req,res)=>{
         const cursor = countriesCollection.find();
@@ -58,13 +63,6 @@ async function run() {
         const result = await cursor.toArray();
         res.send(result);
     })
-app.get('/location/:id',async(req,res)=>{
-
-  const id=req.params.id;
-  const query={_id:new ObjectId(id)};
-  const result = await locationCollection.findOne(query);
-  res.send(result);
-})
 
 
     app.get("/details/:_id", async (req, res) => {
@@ -83,6 +81,33 @@ app.get('/location/:id',async(req,res)=>{
         const result=await locationCollection.insertOne(AddformData);
         res.send(result);
     })    
+
+
+    app.put('/location/:email/:id', async (req, res) => {
+      const id = req.params.id;
+      const email = req.params.email;
+      const filter = { _id: new ObjectId(id), email: email };
+      const options = { upsert: true };
+      const updatedLocation = req.body;
+      const craft = {
+          $set: {
+              name: updatedLocation.image,
+              email: updatedLocation.email,
+              tourist_spot_name: updatedLocation.tourist_spot_name,
+              Country_name: updatedLocation.Country_name,
+              price: updatedLocation.price,
+              rating: updatedLocation.rating,
+          }
+      }
+      try {
+          const result = await locationCollection.updateOne(filter, craft, options);
+          res.json(result);
+      } catch (error) {
+          res.status(500).json({ error: error.message });
+      }
+  });
+  
+
 
     app.delete('/location/:id', async (req, res) => {
       const id=req.params.id;

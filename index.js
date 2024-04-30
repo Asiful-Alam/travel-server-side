@@ -32,13 +32,13 @@ async function run() {
     const bdCollection = client.db("bdDB").collection("bd");
 
     // Routes
-      // Add location
-      app.post("/location", async (req, res) => {
-        const AddformData = req.body;
-        console.log(AddformData);
-        const result = await locationCollection.insertOne(AddformData);
-        res.send(result);
-      });
+    // Add location
+    app.post("/location", async (req, res) => {
+      const AddformData = req.body;
+      console.log(AddformData);
+      const result = await locationCollection.insertOne(AddformData);
+      res.send(result);
+    });
 
     // Get all locations
     app.get("/location", async (req, res) => {
@@ -47,13 +47,14 @@ async function run() {
       res.send(result);
     });
 
-
     // Get locations by email
     app.get("/location/:email", async (req, res) => {
       try {
         const email = req.params.email;
         console.log("Fetching locations for email:", email);
-        const locations = await locationCollection.find({ email }).toArray();
+        const locations = await locationCollection
+          .find({ email: email })
+          .toArray();
         console.log("Fetched locations:", locations);
         res.json(locations);
       } catch (error) {
@@ -62,47 +63,67 @@ async function run() {
       }
     });
 
-    // app.get("/location/:email/", async (req, res) => {
-    //   const { email } = req.params;
-    //   const result = await locationCollection.findOne({ email: email});
-    //   res.send(result);
-    // });
+    app.get("/location/:email", async (req, res) => {
+      const { email } = req.params;
+      const result = await locationCollection.findOne({ email: email });
+      res.send(result);
+    });
 
-    
     // Get location by email and _id
-    // app.get("/location/:email/:id", async (req, res) => {
-    //   const  id  = req.params.id;
-    //   const result = await locationCollection.findOne({ _id: new ObjectId(id) });
-    //   res.send(result);
-    // }); 
+    app.get("/location/:email/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await locationCollection.findOne({
+        _id: new ObjectId(id),
+      });
+      res.send(result);
+    });
 
-    // app.put('/location/:email/:id',async(req,res)=>{
-    //   const id = req.params.id;
-    //   const email= req.params.email;
-    //   const filter = {_id: new ObjectId(id),email: email}
-    //   const options = {upsert:true}
-    //   const updatedItem = req.body;
-    //   const location = {
-    //     $set:{
-           
-    //         image:updatedItem.image,
-    //         tourists_spot_name:updatedItem.tourists_spot_name,
-    //         country_name:updatedItem.country_name,
-    //         location:updatedItem.location,
-    //         short_description:updatedItem.short_description,
-    //         average_cost:updatedItem.average_cost,
-    //         seasonality:updatedItem.seasonality,
-    //         travel_time:updatedItem.travel_time,
-    //         total_visitors_per_year:updatedItem.total_visitors_per_year
-        
-    //   }
-    // }
-    // const result = await locationCollection.updateOne(filter,location,options);
-    // res.send(result)
-    // })
-    
+    app.put("/location/:id", async (req, res) => {
+      const id = req.params.id;
+      // const email= req.params.email;
+      const filter = { _id: new ObjectId(id) };
+      const updatedItem = req.body;
+      const currrrLoc = await locationCollection.findOne(filter);
 
-  
+      const location = {
+        $set: {
+          image: updatedItem.image || currrrLoc.image,
+          tourists_spot_name:
+            updatedItem.tourists_spot_name || currrrLoc.tourists_spot_name,
+          country_name: updatedItem.country_name || currrrLoc.country_name,
+          location: updatedItem.location || currrrLoc.location,
+          short_description:
+            updatedItem.short_description || currrrLoc.short_description,
+          average_cost: updatedItem.average_cost || currrrLoc.average_cost,
+          seasonality: updatedItem.seasonality || currrrLoc.seasonality,
+          travel_time: updatedItem.travel_time || currrrLoc.travel_time,
+          total_visitors_per_year:
+            updatedItem.total_visitors_per_year ||
+            currrrLoc.total_visitors_per_year,
+        },
+      };
+      console.log("db daata", currrrLoc);
+      const result = await locationCollection.updateOne(filter, location);
+      res.send(result);
+    });
+
+
+    app.get("/countries/:country_name", async (req, res) => {
+      const countryName = req.params.country_name;
+      try {
+        const countryDetails = locationCollection.find({
+          country_name: countryName,
+        });
+        if (!countryDetails) {
+          return res.status(404).json({ error: "Country not found" });
+        }
+        const countryList= await countryDetails.toArray()
+        res.send(countryList);
+      } catch (error) {
+        console.error("Error fetching country details:", error);
+        res.status(500).json({ error: "Internal server error" });
+      }
+    });
     // Get all countries
     app.get("/countries", async (req, res) => {
       const cursor = countriesCollection.find();
@@ -120,7 +141,6 @@ async function run() {
       res.send(result);
     });
 
-  
     // Delete location by _id
     app.delete("/location/:id", async (req, res) => {
       const id = req.params.id;
@@ -129,84 +149,62 @@ async function run() {
       res.send(result);
     });
 
-    
     // Update location by _id
-//  app.put("/location/email/:id", async (req, res) => {
-//   try {
-//     const email= req.params.email;
-//     const id = req.params.id;
-//     const updatedLocation = req.body;
-//     const result = await locationCollection.updateOne(
-//       { _id: ObjectId(id) },
-//       { $set: updatedLocation }
-//     );
-//     if (result.modifiedCount === 1) {
-//       res.status(200).json({ message: "Location updated successfully" });
-//     } else {
-//       res.status(404).json({ error: "Location not found" });
-//     }
-//   } catch (error) {
-//     console.error("Error updating location:", error);
-//     res.status(500).json({ error: "Internal server error" });
-//   }
-// });
+    //  app.put("/location/email/:id", async (req, res) => {
+    //   try {
+    //     const email= req.params.email;
+    //     const id = req.params.id;
+    //     const updatedLocation = req.body;
+    //     const result = await locationCollection.updateOne(
+    //       { _id: ObjectId(id) },
+    //       { $set: updatedLocation }
+    //     );
+    //     if (result.modifiedCount === 1) {
+    //       res.status(200).json({ message: "Location updated successfully" });
+    //     } else {
+    //       res.status(404).json({ error: "Location not found" });
+    //     }
+    //   } catch (error) {
+    //     console.error("Error updating location:", error);
+    //     res.status(500).json({ error: "Internal server error" });
+    //   }
+    // });
 
+    // app.put('/location/:email/:id',async(req,res)=>{
+    //   const id = req.params.id;
+    //   const email= req.params.email;
+    //   const filter = {_id: new ObjectId(id),email: email}
+    //   const options = {upsert:true}
+    //   const updatedItem = req.body;
+    //   const location = {
+    //     $set:{
 
-// app.put('/location/:email/:id',async(req,res)=>{
-//   const id = req.params.id;
-//   const email= req.params.email;
-//   const filter = {_id: new ObjectId(id),email: email}
-//   const options = {upsert:true}
-//   const updatedItem = req.body;
-//   const location = {
-//     $set:{
-       
-//         image:updatedItem.image,
-//         tourists_spot_name:updatedItem.tourists_spot_name,
-//         country_name:updatedItem.country_name,
-//         location:updatedItem.location,
-//         short_description:updatedItem.short_description,
-//         average_cost:updatedItem.average_cost,
-//         seasonality:updatedItem.seasonality,
-//         travel_time:updatedItem.travel_time,
-//         total_visitors_per_year:updatedItem.total_visitors_per_year
-    
-//   }
-// }
-// const result = await locationCollection.updateOne(filter,location,options);
-// res.send(result)
-// })
+    //         image:updatedItem.image,
+    //         tourists_spot_name:updatedItem.tourists_spot_name,
+    //         country_name:updatedItem.country_name,
+    //         location:updatedItem.location,
+    //         short_description:updatedItem.short_description,
+    //         average_cost:updatedItem.average_cost,
+    //         seasonality:updatedItem.seasonality,
+    //         travel_time:updatedItem.travel_time,
+    //         total_visitors_per_year:updatedItem.total_visitors_per_year
 
+    //   }
+    // }
+    // const result = await locationCollection.updateOne(filter,location,options);
+    // res.send(result)
+    // })
 
     // Get country details by name
-    app.get("/countries/:country_name", async (req, res) => {
-      const countryName = req.params.country_name;
-      try {
-        const countryDetails = await countriesCollection.findOne({ country_name: countryName });
-        if (!countryDetails) {
-          return res.status(404).json({ error: "Country not found" });
-        }
-        res.json(countryDetails);
-      } catch (error) {
-        console.error("Error fetching country details:", error);
-        res.status(500).json({ error: "Internal server error" });
-      }
-    });
 
-    app.get("/location/country/:country_name", async (req, res) => {
-      console.log(req.params.country_name);
-      const countryName = req.params.country_name;
-      const result = await locationCollection.find({
-        country_name: countryName
-      }).toArray();
-      console.log(result);
-      res.send(result);
-    });
+
 
 
     // Ping MongoDB deployment
     await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
   } finally {
     // Close client connection
     // await client.close();
